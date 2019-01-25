@@ -5,8 +5,9 @@ line_len=`expr $(/usr/bin/tput cols) - 2` # get terminal width
 num_entries=15
 chart_char='='
 # Get the calling shell
-shell=$(ps -p $PPID -o comm= | sed -e 's/^-//')
-histfile=$($shell -ci "echo \$HISTFILE")
+shell=$(ps -p $PPID -o comm= | sed -e 's/^-//') # fish doesnt have pppid
+#histfile=$($shell -ci "echo \$HISTFILE") # this gives error - fish: Unknown command 'i'
+histfile="$HOME/.local/share/fish/fish_history"
 OPTIND=1 # reset getopts
 max_len=0
 
@@ -54,13 +55,19 @@ shift $((OPTIND-1))
 
 echo "entries=$num_entries, file=$histfile, char=$chart_char, len=$line_len"
 
-if [ $zsh_extended_history -eq 1 ]
+if [[ $histfile == *"fish_history" ]];
 then
-  calc=$(grep -v -E '^\s*$|^\s+' $histfile | awk -F ';' '{print $2}' |
-    awk '{print $1}' | sort | uniq -c | sort -rn)
-else
-  calc=$(grep -v -E '^\s*$|^\s+' $histfile | awk '{print $1}' | sort | uniq -c |
+  calc=$(grep -v -E '^\s*$|^\s+' $histfile | awk '{print $3}' | sort | uniq -c |
     sort -rn)
+else
+	if [ $zsh_extended_history -eq 1 ]
+	then
+	  calc=$(grep -v -E '^\s*$|^\s+' $histfile | awk -F ';' '{print $2}' |
+		 awk '{print $1}' | sort | uniq -c | sort -rn)
+	else
+	  calc=$(grep -v -E '^\s*$|^\s+' $histfile | awk '{print $1}' | sort | uniq -c |
+		 sort -rn)
+	fi
 fi
 
 for (( n=0; n<=$num_entries; n++ ))
